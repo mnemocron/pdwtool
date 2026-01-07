@@ -1,4 +1,3 @@
-# pdwstudio
+# PDW Tool
 
-Basic example of a radar target simulator for RF vector signal generators for demo purposes. Written as a webapp (html, javascrip)
-
+Static website to generate and export generic PDW lists for radar target simulation with vector signal generators
