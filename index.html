@@ -1,0 +1,1393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PDW Tool</title>
+<script src="./assets/pdwlib.js" charset="utf-8"></script>
+<script src="https://cdn.plot.ly/plotly-3.1.0.min.js" charset="utf-8"></script>
+<style>
+    header, footer {
+      display: flex;
+      align-items: center;
+      padding: 10px 20px;
+      background-color: #29313f;
+      color: #fff;
+    }
+    body {
+        font-size: 11pt;
+        font-family: Arial, sans-serif;
+        margin: 0;
+        background: #f2f2f2;
+    }
+    .container-wrapper {
+      margin: 20px;
+      gap: 20px;
+    }
+    header h1 {
+      font-size: 1.5rem;
+      margin: 0;
+    }
+    h3 {
+        color: #2c3e50;
+        font-size: 1.2rem;
+    }
+
+    .minor {
+        font-size: 10pt;
+        color: darkgrey;
+    }
+
+    .container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+        gap: 20px;
+    }
+
+    .card {
+        background: #fff;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .field {
+        display: grid;
+        grid-template-columns: 150px 1fr 60px;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 5px;
+    }
+
+    .field.dropdown {
+        grid-template-columns: 150px 1fr;
+    }
+
+    input, select {
+        padding: 6px;
+        width: 80px;
+        /* width: 96%; */
+        padding: 6px;
+        margin-top: 5px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+    select {
+        width: 96%;
+    }
+    input {
+        color: #195cc6;
+    }
+
+    input.highlight-error {
+        background-color: lightpink;
+        color: darkred;
+    }
+    input.highlight-warning {
+        background-color: #f7e174;
+        color: #877001;
+    }
+    input.highlight-inactive {
+        background-color: #eee;
+        color: #303030;
+    }
+
+    .unit {
+        text-align: left;
+        font-style: italic;
+        font-weight: bold;
+        font-size: 11pt;
+    }
+    .full-width {
+        grid-column: 1 / -1;
+    }
+
+    .action-button {
+        width: 96%;
+        padding: 8px;
+        margin-top: 10px;
+        margin-bottom: 10px;
+    }
+    .reference-section {
+      font-size: 9pt;
+      color: #aaa;
+      margin-top: 8px;
+      margin-bottom: 8px;
+    }
+    .reference-section a {
+      color: #74a3c9;
+    }
+    .reference-number {
+        font-size: 7pt;
+    }
+
+</style>
+</head>
+<body onload="update_all_buttons();">
+    <header>
+        <h1 style="font-weight: normal;">&nbsp;<span style="color: #808080;">Radar Pulse List Generator</span>&nbsp;&nbsp;Simon's PDW tool</h1>
+        <span style="font-weight: 5px; margin-left: 3em; margin-top: 5px; color: #808080;">v2.1.3</span>
+    </header>
+    <main class="container-wrapper">
+        <div class="container">
+
+        <!--<div class="card">
+            <h3>Scenario</h3>
+            <div class="">
+                <img src="./assets/schematic-drawing.png" style="width: 96%;">
+            </div>
+        </div>-->
+        <div class="card">
+            <h3>Instrument Constraints</h3>
+            <div class="field dropdown">
+                <label>Preset</label>
+                <select id="inp_instrpres">
+                    <option>slow signal generator (6GHz)</option>
+                    <option>fast signal generator (6GHz)</option>
+                </select>
+            </div>
+            <div class="reference-section">
+                or check signal generator datasheet to fill in the constraints.
+                <br>
+            </div>
+            <div class="field">
+                <label>Transient time <span class="minor">min</span></label>
+                <input type="number" id="ctr_tmin" value="10.0"/>
+                <span class="unit">&#956;s</span>
+            </div>
+            <div class="field">
+                <label>RF frequency <span class="minor">min</span></label>
+                <input type="number" id="ctr_fmin" value="0.010"/>
+                <span class="unit">GHz</span>
+            </div>
+            <div class="field">
+                <label>RF frequency <span class="minor">max</span></label>
+                <input type="number" id="ctr_fmax" value="6.0"/>
+                <span class="unit">GHz</span>
+            </div>
+            <div class="field">
+                <label>Power <span class="minor">min</span></label>
+                <input type="number" id="ctr_pmin" value="-60"/>
+                <span class="unit">dBm</span>
+            </div>
+            <div class="field">
+                <label>Power <span class="minor">max</span></label>
+                <input type="number" id="ctr_pmax" value="15"/>
+                <span class="unit">dBm</span>
+            </div>
+            <div class="field">
+                <label>Sample rate</label>
+                <input type="number" id="ctr_iqrate" value="500.0" readonly class="highlight-inactive"/>
+                <span class="unit">MSa/s</span>
+            </div>
+            <div class="field">
+                <label>IQ bandwidth <span class="minor">max</span></label>
+                <input type="number" id="ctr_iqbw" value="400"/>
+                <span class="unit">MHz</span>
+            </div>
+            <div class="field">
+                <label>Pulse width <span class="minor">min</span></label>
+                <input type="number" id="ctr_tpmin" value="10"/>
+                <span class="unit">ns</span>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Modulation and Pulse Shape</h3>
+            <div class="field">
+                <label>Waveform ID <span class="reference-number">(1)</span></label>
+                <input type="number" id="inp_iqid" value="0"/>
+                <span class="unit"></span>
+            </div>
+            <div class="field">
+                <label>Waveform duration</label>
+                <input type="number" id="inp_iqlength" value="1.0"/>
+                <span class="unit">&#956;s</span>
+            </div>
+            <div class="field dropdown">
+                <label>Modulation type</label>
+                <select id="inp_iqtype">
+                    <option>FMCW (linear)</option>
+                    <option>Barker-7</option>
+                    <option>Barker-13</option>
+                    <option>none (CW)</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>FM start</label>
+                <input type="number" id="inp_iqchirpstart" value="-50"/>
+                <span class="unit">MHz</span>
+            </div>
+            <div class="field">
+                <label>FM end</label>
+                <input type="number" id="inp_iqchirpend" value="50"/>
+                <span class="unit">MHz</span>
+            </div>
+            <div class="field">
+                <label>Rise time <span class="reference-number">(2)</span></label>
+                <input type="number" id="inp_iqtrise" value="100"/>
+                <span class="unit">ns</span>
+            </div>
+            <div class="field">
+                <label>Fall time <span class="reference-number">(2)</span></label>
+                <input type="number" id="inp_iqtfall" value="100"/>
+                <span class="unit">ns</span>
+            </div>
+            <div class="field">
+                <label>IQ scale</label>
+                <input type="number" id="inp_iqscale" value="1.0"/>
+                <span class="unit"></span>
+            </div>
+            <div class="reference-section">
+                <!--<p>Linear chirp: <a href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.chirp.html">docs.scipy.org</a> </p>-->
+                <p><span class="reference-number">(1)</span> Will be used in PDW list. Must be maually set when importing IQ.</p>
+                <p><span class="reference-number">(2)</span> Raised cosine: <a href="https://easings.net/#easeInOutSine">easings.net</a></p>
+            </div>
+            <button class="action-button" type="button" id="btnCalcIQ">Generate IQ</button>
+        </div>
+        <div class="card">
+            <h3>Generated Waveform</h3></br>
+            <div id="plotly_iqwave" style="width:100%;height:20em;"></div>
+            <div class="field">
+                <label># of IQ samples</label>
+                <input type="number" id="inp_niq" value="" readonly class="highlight-inactive"/>
+                <span class="unit"></span>
+                <label>Bandwidth estimate <span class="reference-number">(3)</span></label>
+                <input type="number" id="inp_iqbw" value="" readonly class="highlight-inactive"/>
+                <span class="unit">MHz</span>
+            </div>
+            <button class="action-button" type="button" id="btnExportIQ">Export IQ</button>
+            
+            <div class="field dropdown">
+                <label>PDW pulse uses</label>
+                <select id="inp_iqenabled">
+                    <option>IQ waveform</option>
+                    <option>none (CW)</option>
+                </select>
+            </div>
+            <div class="reference-section">
+                <p><span class="reference-number">(3)</span> used for plotting</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Radar Antenna</h3>
+            <div class="field dropdown">
+                <label>Radiation pattern <span class="reference-number">(4)</label>
+                <select id="ant_shape">
+                    <option>Cardioid</span></option>
+                    <option>&lambda;/2 Dipole</option>
+                    <option>Isotrope</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Scan rotation</label>
+                <input type="number" id="ant_fscan" value="60"/>
+                <span class="unit">rpm</span>
+            </div>
+            <div class="field">
+                <label>Power <span class="minor">peak</span></label>
+                <input type="number" id="ant_pmax" value="10"/>
+                <span class="unit">dBm</span>
+            </div>
+            <!--<div class="field">
+                <label>power (min)</label>
+                <input type="number" value="-25"/>
+                <span class="unit">dBm</span>
+            </div>-->
+            <div id="plotly_antenna" style="width:100%;height:24em;"></div>
+            <div class="reference-section">
+                <p><span class="reference-number">(4)</span> cardioid: <a href="https://en.wikipedia.org/wiki/Cardioid">en.wikipedia.org</a> </p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Frequency Hopping</h3>
+            <div class="field">
+                <label>Frequency <span class="minor">min</span></label>
+                <input type="number" id="fhop_fmin" value="1.0"/>
+                <span class="unit">GHz</span>
+            </div>
+            <div class="field">
+                <label>Frequency <span class="minor">max</span></label>
+                <input type="number" id="fhop_fmax" value="4.0"/>
+                <span class="unit">GHz</span>
+            </div>
+            <div class="field dropdown">
+                <label>Hop pattern</label>
+                <select id="fhop_pattern" >
+                    <option>none</option>
+                    <option>Random</option>
+                    <option>Sweep up</option>
+                    <option>Sine wave</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Pattern repeat period</label>
+                <input type="number" id="fhop_period" value="1.0"/>
+                <span class="unit">s</span>
+            </div>
+            <hr>
+            <h3>Radar Timing</h3>
+            <div class="field">
+                <label>Pulse width</label>
+                <input type="number" id="pdw_pwidth" value="1.0"/>
+                <span class="unit">&#956;s</span>
+            </div>
+            <div class="field">
+                <label>PRI</label>
+                <input type="number" id="pdw_pri" value="5000"/>
+                <span class="unit">&#956;s</span>
+            </div>
+            <div class="field">
+                <label>Simulation duration</label>
+                <input type="number" id="pdw_tsim" value="1.0"/>
+                <span class="unit">s</span>
+            </div>
+            <button class="action-button" type="button" id="btnCalcPDW">Generate PDW</button>
+            <div class="field">
+                <label># of PDW in list <span class="reference-number">(3)</span></label>
+                <input type="number" id="out_npdw" value="" readonly class="highlight-inactive"/>
+                <span class="unit"></span>
+            </div>
+            <button class="action-button" type="button" id="btnExportPDW">Export PDW</button>
+            <div class="reference-section">
+                <p><span class="reference-number">(3)</span> for performance reasons N < 1000 is recommended</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Multi Antenna Setup</h3>
+            <div class="field dropdown">
+                <label>Number of channels</label>
+                <select id="ant_nant" >
+                    <option>1</option>
+                    <option>2</option>
+                    <option>3</option>
+                    <option>4</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Antenna spacing</label>
+                <input type="number" id="ant_spacing" value="0.5"/>
+                <span class="unit">&lambda;</span>
+            </div>
+            <div class="field">
+                <label style="padding-left: 20px;">for frequency</label>
+                <input type="number" id="ant_fspacing" value="1.0"/>
+                <span class="unit">GHz</span>
+            </div>
+            <div class="field">
+                <label>Calculated spacing</label>
+                <input type="number" id="ant_calcspacing" value="" readonly class="highlight-inactive"/>
+                <span class="unit">m</span>
+            </div>
+            <div class="field dropdown">
+                <label>AoA movement</label>
+                <select id="ant_aoapattern" >
+                    <option>none</option>
+                    <option>zig-zag</option>
+                    <option>sawtooth</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Movement period<span class="minor">min</span></label>
+                <input type="number" id="ant_aoaperiod" class="highlight-inactive" value="1"/>
+                <span class="unit">s</span>
+            </div>
+            <div class="field">
+                <label>Angle of Arrival <span class="minor">min</span></label>
+                <input type="number" id="ant_aoamin" value="0"/>
+                <span class="unit">&deg;</span>
+            </div>
+            <div class="field">
+                <label>Angle of Arrival <span class="minor">max</span></label>
+                <input type="number" id="ant_aoamax" value="180" class="highlight-inactive"/>
+                <span class="unit">&deg;</span>
+            </div>
+
+            <button class="action-button" type="button" id="btnGeneratePDWch" disabled>Generate additional PDW channels</button>
+            <button class="action-button" type="button" id="btnExportPDW2" disabled>Export PDW (CH2)</button>
+            <button class="action-button" type="button" id="btnExportPDW3" disabled>Export PDW (CH3)</button>
+            <button class="action-button" type="button" id="btnExportPDW4" disabled>Export PDW (CH4)</button>
+        </div>
+
+<!--        <div class="card">
+            <h3>Pulse Timing</h3>
+            <div class="">
+                <img src="./assets/pri-drawing.png" style="width: 96%;">
+            </div>
+        </div>  -->
+
+        <div class="card full-width">
+            <h3>Waterfall Diagram</h3>
+            <div id="plotly_waterfall" style="width:100%;height:30em;"></div>
+        </div>
+
+        <div class="card full-width">
+            <h3>CH2 Phase (relative to CH1)</h3>
+            <div id="plotly_phase" style="width:100%;height:30em;"></div>
+        </div>
+    </div>
+</main>
+</body>
+
+<script>
+    
+  const plotlyCanvas_iq = document.getElementById('plotly_iqwave');
+  const plotlyCanvas_antenna = document.getElementById('plotly_antenna');
+  const plotlyCanvas_waterfall = document.getElementById('plotly_waterfall');
+  const plotlyCanvas_phase = document.getElementById('plotly_phase');
+
+  const instrPreset = document.getElementById('inp_instrpres');
+  const inpIqRate = document.getElementById('ctr_iqrate');
+  const inpTpMin = document.getElementById('ctr_tpmin');
+  const inpIqBW = document.getElementById('ctr_iqbw');
+  const inpIqID = document.getElementById('inp_iqid');
+  const inpIqLength = document.getElementById('inp_iqlength');
+  const inpIqType = document.getElementById('inp_iqtype');
+  const inpIqEnabled = document.getElementById('inp_iqenabled');
+  const inpIqChirpStart = document.getElementById('inp_iqchirpstart');
+  const inpIqChirpEnd = document.getElementById('inp_iqchirpend');
+  const inpIqTrise = document.getElementById('inp_iqtrise');
+  const inpIqTfall = document.getElementById('inp_iqtfall');
+  const inpIqScale = document.getElementById('inp_iqscale');
+  const inpNIQ = document.getElementById('inp_niq');
+  const ctrTmin = document.getElementById('ctr_tmin');
+  const ctrFmin = document.getElementById('ctr_fmin');
+  const ctrFmax = document.getElementById('ctr_fmax');
+  const ctrPmin = document.getElementById('ctr_pmin');
+  const ctrPmax = document.getElementById('ctr_pmax');
+  const antShape = document.getElementById('ant_shape');
+  const antFscan = document.getElementById('ant_fscan');
+  const antPmax = document.getElementById('ant_pmax');
+  const antNant = document.getElementById('ant_nant');
+  const antAoaPattern = document.getElementById('ant_aoapattern');
+  const antSpacing = document.getElementById('ant_spacing');
+  const antFspacing = document.getElementById('ant_fspacing');
+  const antCalcspacing = document.getElementById('ant_calcspacing'); // output only
+  const antAoaMin = document.getElementById('ant_aoamin');
+  const antAoaMax = document.getElementById('ant_aoamax');
+  const antAoaPeriod = document.getElementById('ant_aoaperiod');
+  const antFhopFmin = document.getElementById('fhop_fmin');
+  const antFhopFmax = document.getElementById('fhop_fmax');
+  const antFhopFpattern = document.getElementById('fhop_pattern');
+  const antFhopPeriod = document.getElementById('fhop_period');
+  const pdwPwidth = document.getElementById('pdw_pwidth');
+  const pdwPRI = document.getElementById('pdw_pri');
+  const pdwTsim = document.getElementById('pdw_tsim');
+
+  const MAX_IQ_SIZE = 500*1000;
+  const N_MAX_PDW = 5000;
+  const lightspeed_ms = 299792458;  // m/s 
+
+  var c_instrPres;
+  var p_iqrate;
+  var p_iqid;
+  var p_iqlength;
+  var p_iqchirpstart;
+  var p_iqchirpend;
+  var p_iqtrise;
+  var p_iqtfall;
+  var p_iqscale;
+  var p_iqtypeidx;
+  var p_iqenabled;
+  var c_Tmin;
+  var c_Fmin;
+  var c_Fmax;
+  var c_Pmin;
+  var c_Pmax;
+  var p_antShape;
+  var p_antFscan;
+  var p_antPmax;
+  var p_antNant;
+  var p_antAoaPattern;
+  var p_antSpacing;
+  var p_antFspacing;
+  var p_antAoaMin;
+  var p_antAoaMax;
+  var p_antAoaPeriod;
+  var p_antFhopFmin;
+  var p_antFhopFmax;
+  var p_antFhopFpattern;
+  var p_antFhopPeriod;
+  var p_pdwPwidth;
+  var p_pdwPRI;
+  var p_pdwTsim;
+
+  var iq_data_i = new Array(MAX_IQ_SIZE);
+  var iq_data_q = new Array(MAX_IQ_SIZE);
+  var iq_data_time = new Array(MAX_IQ_SIZE);
+  let pdw_list = [];
+  let pdw_list_2 = [];
+  let pdw_list_3 = [];
+  let pdw_list_4 = [];
+  var N_PDW = 0;
+  var estimatedBW = 0;
+  var calcAntennaDistance;
+  var valueCheckPassedIQ = false;
+  var valueCheckPassedPDW = false;
+  var multiplePDWlistsGenerated = false;
+
+  function updateFormValues(){
+    c_instrPres = instrPreset.selectedIndex;
+    p_iqrate = 1e6 * parseFloat(inpIqRate.value) || 500;
+    p_iqid = parseFloat(inpIqID.value) || 0;
+    p_iqlength = 1e-6 * parseFloat(inpIqLength.value) || -1;
+    p_iqchirpstart = 1e6 * parseFloat(inpIqChirpStart.value) || 0;
+    p_iqchirpend = 1e6 * parseFloat(inpIqChirpEnd.value) || 0;
+    p_iqtrise = 1e-9 * parseFloat(inpIqTrise.value) || 0;
+    p_iqtfall = 1e-9 * parseFloat(inpIqTfall.value) || 0;
+    p_iqscale = parseFloat(inpIqScale.value) || 1.0;
+    p_iqtypeidx = inpIqType.selectedIndex;
+    p_iqenabled = inpIqEnabled.selectedIndex;
+    c_Tmin = 1e-6 * parseFloat(ctrTmin.value) || 2e-6;
+    c_Fmin = 1e9 * parseFloat(ctrFmin.value) || 0.010;
+    c_Fmax = 1e9 * parseFloat(ctrFmax.value) || 4.0;
+    c_Pmin = parseFloat(ctrPmin.value) || -20;
+    c_Pmax = parseFloat(ctrPmax.value) || 15;
+    c_iqbw = 1e6 * parseFloat(inpIqBW.value) || 400;
+    c_tpmin = 1e-9 * parseFloat(inpTpMin.value) || 0.0;
+    p_antShape = antShape.selectedIndex;
+    p_antFscan = parseFloat(antFscan.value) || 0;
+    p_antPmax = parseFloat(antPmax.value) || 0;
+    p_antNant = antNant.selectedIndex;
+    p_antAoaPattern = antAoaPattern.selectedIndex;
+    p_antSpacing = parseFloat(antSpacing.value) || 0;
+    p_antFspacing = parseFloat(antFspacing.value) || 1.0;
+    p_antAoaMin = parseFloat(antAoaMin.value) || 0.0;
+    p_antAoaMax = parseFloat(antAoaMax.value) || 0.0;
+    p_antAoaPeriod = parseFloat(antAoaPeriod.value) || 1.0;
+    p_antFhopFmin = 1e9 * parseFloat(antFhopFmin.value) || 0.0;
+    p_antFhopFmax = 1e9 * parseFloat(antFhopFmax.value) || 0.0;
+    p_antFhopFpattern = antFhopFpattern.selectedIndex;
+    p_antFhopPeriod = parseFloat(antFhopPeriod.value) || 1.0;
+    p_pdwPwidth = 1e-6 * parseFloat(pdwPwidth.value) || 0.0;
+    p_pdwPRI = 1e-6 * parseFloat(pdwPRI.value) || 0.0;
+    p_pdwTsim = parseFloat(pdwTsim.value) || 0.0;
+  }
+
+  function updateContraintPreset(){
+    // update Freq limits
+    document.getElementById('ctr_fmin').value = 0.01;
+    document.getElementById('ctr_pmin').value = -60;
+    document.getElementById('ctr_pmax').value = 15;
+    if(c_instrPres === 0){
+        document.getElementById('ctr_fmax').value = 6.0;
+        document.getElementById('ctr_tmin').value = 10;
+    }
+    if(c_instrPres === 1){
+        document.getElementById('ctr_fmax').value = 6.0;
+        document.getElementById('ctr_tmin').value = 500;
+    }
+    document.getElementById('ctr_pmax').value = 15;
+    document.getElementById('ctr_iqbw').value = 400;
+    document.getElementById('ctr_tpmin').value = 10;
+  }
+
+  function updateAntennaSpacing(){
+    calcAntennaDistance = p_antSpacing*lightspeed_ms /(p_antFspacing*1e9);
+    document.getElementById('ant_calcspacing').value = calcAntennaDistance;
+  }
+
+  function updateMultiAntenna(){
+    if(p_antNant === 0){
+        document.getElementById('btnGeneratePDWch').setAttribute('disabled','');
+    } else {
+        document.getElementById('btnGeneratePDWch').removeAttribute('disabled');
+        document.getElementById('btnExportPDW2').setAttribute('disabled','');
+        document.getElementById('btnExportPDW3').setAttribute('disabled','');
+        document.getElementById('btnExportPDW4').setAttribute('disabled','');
+        if(multiplePDWlistsGenerated === true){
+            if(p_antNant >= 1){
+                document.getElementById('btnExportPDW2').removeAttribute('disabled');
+            }
+            if(p_antNant >= 2){
+                document.getElementById('btnExportPDW3').removeAttribute('disabled');
+            }
+            if(p_antNant >= 3){
+                document.getElementById('btnExportPDW4').removeAttribute('disabled');
+            }
+        }
+    }
+  }
+
+  function updatePdwList(){
+    if(valueCheckPassedPDW === false) return;
+    pdw_list = [];
+    var use_iq = 1;
+    if(p_iqenabled === 1){
+        use_iq = 0; // drop-down index 1 --> CW
+    }
+    var relative_time = 0;  // initial start
+    var imm_pow = p_antPmax;
+    var ant_rot = 1/(p_antFscan) * 60; //  rpm * 60s/min
+    var powOffs = (p_antPmax - c_Pmin);
+    var fHopStep = (p_antFhopFmax - p_antFhopFmin)/N_PDW/p_antFhopPeriod;
+    for(let i = 0; i < N_PDW; i++) {
+      // simulate antenna power
+      var antennaAngleRelative = 2*Math.PI * relative_time/ant_rot;
+      if(p_antShape === 1){
+        imm_pow = p_antPmax - powOffs + powOffs * antennaPhi2PowDipole(antennaAngleRelative);
+      } else if(p_antShape === 0) {
+        imm_pow = p_antPmax - powOffs + powOffs * antennaPhi2PowCardioid(antennaAngleRelative);
+      } else {
+        imm_pow = p_antPmax;
+      }
+      // simulate frequency hopping
+      var relativeFreq = 0;
+      if(p_antFhopFpattern === 2){
+        relativeFreq = p_antFhopFmin + ( (i*fHopStep)% (p_antFhopFmax - p_antFhopFmin) );
+      } else if(p_antFhopFpattern === 1) {
+        relativeFreq = p_antFhopFmin + (p_antFhopFmax-p_antFhopFmin) * Math.random();
+      } else if(p_antFhopFpattern === 3) {
+	    relativeFreq = p_antFhopFmin + (p_antFhopFmax-p_antFhopFmin)/2* (1+Math.cos(2*Math.PI*i/N_PDW/p_antFhopPeriod + Math.PI));
+      } else {
+        relativeFreq = p_antFhopFmin;
+      }
+      var phiSim = 0; // CH1 has zero phase reference
+
+      pdw_list.push(new PDW(p_pdwPRI,p_pdwPwidth,relativeFreq,imm_pow,phiSim,use_iq,p_iqid));
+      //pdw_list.push(new PDW(p_pdwPRI,p_pdwPwidth,fSim,imm_pow,phiSim,use_iq,p_iqid));
+      relative_time += p_pdwPRI;
+    }
+  }
+
+  function updatePdwMultichannel(){
+    if(valueCheckPassedPDW === false) return;
+    var n_ch = p_antNant +1;
+    pdw_list_2 = [];
+    pdw_list_3 = [];
+    pdw_list_4 = [];
+
+    var relativeTime = 0;
+    var relativeAngle = p_antAoaMin;
+    var relativeDistance = calcAntennaDistance;
+    var aoaPhaseStep = (p_antAoaMax - p_antAoaMin)/p_antAoaPeriod;
+
+    if(n_ch > 1){
+        for(let i = 0; i < N_PDW; i++) {
+            var tstart = pdw_list[i].tstart;
+            var pwidth = pdw_list[i].pwidth;
+            var freq = pdw_list[i].freq;
+            var pow = pdw_list[i].pow;
+            var phas_ref = pdw_list[i].phas;
+            var iqstat = pdw_list[i].iqstat;
+            var iqseg = pdw_list[i].iqseg;
+
+            relativeTime += tstart;
+            if(p_antAoaPattern === 2){ // sawtooth
+                relativeAngle = p_antAoaMin + (relativeTime % p_antAoaPeriod) * aoaPhaseStep;
+            } else if(p_antAoaPattern === 1){ // zig-zag
+                // todo still hase issues with negative phases
+                if((relativeTime % p_antAoaPeriod) < (p_antAoaPeriod/2)){
+                    relativeAngle = p_antAoaMin + (relativeTime % p_antAoaPeriod) * aoaPhaseStep *2;
+                } else {
+                    relativeAngle = 2*(p_antAoaMax - p_antAoaMin) - (relativeTime % p_antAoaPeriod) * aoaPhaseStep *2;
+                }
+            } else {  // none
+                relativeAngle = p_antAoaMin;
+            }
+
+            var deltaPhi = Math.cos(relativeAngle/180*Math.PI) *  relativeDistance / lightspeed_ms * freq;
+            deltaPhi += phas_ref;
+            deltaPhi *= Math.PI;
+            while(deltaPhi < 0){
+                deltaPhi += 2*Math.PI;
+            }
+            pdw_list_2.push(new PDW(tstart,pwidth,freq,pow,deltaPhi,iqstat,iqseg));
+        }
+    }
+    if(n_ch > 2){
+        relativeDistance = 2*calcAntennaDistance;
+        for(let i = 0; i < N_PDW; i++) {
+            var tstart = pdw_list[i].tstart;
+            var pwidth = pdw_list[i].pwidth;
+            var freq = pdw_list[i].freq;
+            var pow = pdw_list[i].pow;
+            var phas_ref = pdw_list[i].phas;
+            var iqstat = pdw_list[i].iqstat;
+            var iqseg = pdw_list[i].iqseg;
+
+            relativeTime += tstart;
+            if(p_antAoaPattern === 2){ // sawtooth
+                relativeAngle = p_antAoaMin + (relativeTime % p_antAoaPeriod) * aoaPhaseStep;
+            } else if(p_antAoaPattern === 1){ // zig-zag
+                // todo still hase issues with negative phases
+                if((relativeTime % p_antAoaPeriod) < (p_antAoaPeriod/2)){
+                    relativeAngle = p_antAoaMin + (relativeTime % p_antAoaPeriod) * aoaPhaseStep *2;
+                } else {
+                    relativeAngle = 2*(p_antAoaMax - p_antAoaMin) - (relativeTime % p_antAoaPeriod) * aoaPhaseStep *2;
+                }
+            } else {  // none
+                relativeAngle = p_antAoaMin;
+            }
+
+            var deltaPhi = Math.cos(relativeAngle/180*Math.PI) *  relativeDistance / lightspeed_ms * freq;
+            deltaPhi += phas_ref;
+            deltaPhi *= Math.PI;
+            while(deltaPhi < 0){
+                deltaPhi += 2*Math.PI;
+            }
+            pdw_list_3.push(new PDW(tstart,pwidth,freq,pow,deltaPhi,iqstat,iqseg));
+        }
+    }
+    if(n_ch > 3){
+        relativeDistance = 3*calcAntennaDistance;
+        for(let i = 0; i < N_PDW; i++) {
+            var tstart = pdw_list[i].tstart;
+            var pwidth = pdw_list[i].pwidth;
+            var freq = pdw_list[i].freq;
+            var pow = pdw_list[i].pow;
+            var phas_ref = pdw_list[i].phas;
+            var iqstat = pdw_list[i].iqstat;
+            var iqseg = pdw_list[i].iqseg;
+
+            relativeTime += tstart;
+            if(p_antAoaPattern === 2){ // sawtooth
+                relativeAngle = p_antAoaMin + (relativeTime % p_antAoaPeriod) * aoaPhaseStep;
+            } else if(p_antAoaPattern === 1){ // zig-zag
+                // todo still hase issues with negative phases
+                if((relativeTime % p_antAoaPeriod) < (p_antAoaPeriod/2)){
+                    relativeAngle = p_antAoaMin + (relativeTime % p_antAoaPeriod) * aoaPhaseStep *2;
+                } else {
+                    relativeAngle = 2*(p_antAoaMax - p_antAoaMin) - (relativeTime % p_antAoaPeriod) * aoaPhaseStep *2;
+                }
+            } else {  // none
+                relativeAngle = p_antAoaMin;
+            }
+
+            var deltaPhi = Math.cos(relativeAngle/180*Math.PI) *  relativeDistance / lightspeed_ms * freq;
+            deltaPhi += phas_ref;
+            deltaPhi *= Math.PI;
+            while(deltaPhi < 0){
+                deltaPhi += 2*Math.PI;
+            }
+            pdw_list_4.push(new PDW(tstart,pwidth,freq,pow,deltaPhi,iqstat,iqseg));
+        }
+    }
+    multiplePDWlistsGenerated = true;
+  }
+
+  function validateValuesPDW(){
+    valueCheckPassedPDW = true;
+    if(p_antFhopFmax > c_Fmax || p_antFhopFmax < c_Fmin){
+        document.getElementById('fhop_fmax').classList.add('highlight-error');
+        document.getElementById('ctr_fmax').classList.add('highlight-warning');
+        valueCheckPassedPDW = false; return;
+    } else {
+        document.getElementById('fhop_fmax').classList.remove('highlight-error');
+        document.getElementById('ctr_fmax').classList.remove('highlight-warning');
+    }
+    if(p_antFhopFmin > c_Fmax || p_antFhopFmin < c_Fmin){
+        document.getElementById('fhop_fmin').classList.add('highlight-error');
+        document.getElementById('ctr_fmin').classList.add('highlight-warning');
+        valueCheckPassedPDW = false; return;
+    } else {
+        document.getElementById('fhop_fmin').classList.remove('highlight-error');
+        document.getElementById('ctr_fmin').classList.remove('highlight-warning');
+    }
+    if(p_antFhopFpattern === 0 || p_antFhopFpattern === 1){
+        document.getElementById('fhop_period').classList.add('highlight-inactive');
+    } else {
+        document.getElementById('fhop_period').classList.remove('highlight-inactive');
+    }
+    if(p_antAoaPattern === 0){
+        document.getElementById('ant_aoamax').classList.add('highlight-inactive');
+        document.getElementById('ant_aoaperiod').classList.add('highlight-inactive');
+    } else {
+        document.getElementById('ant_aoamax').classList.remove('highlight-inactive');
+        document.getElementById('ant_aoaperiod').classList.remove('highlight-inactive');
+    }
+    if(p_antAoaMin < 0 || p_antAoaMin > 180){
+        document.getElementById('ant_aoamin').classList.add('highlight-error');
+        valueCheckPassedPDW = false; return;
+    } else {
+        document.getElementById('ant_aoamin').classList.remove('highlight-error');
+    }
+    if(p_antAoaMax < 0 || p_antAoaMax > 180){
+        document.getElementById('ant_aoamax').classList.add('highlight-error');
+        valueCheckPassedPDW = false; return;
+    } else {
+        document.getElementById('ant_aoamax').classList.remove('highlight-error');
+    }
+    N_PDW = Math.floor(p_pdwTsim/p_pdwPRI);
+    document.getElementById('out_npdw').value = N_PDW;
+    if(N_PDW > N_MAX_PDW){
+      N_PDW = N_MAX_PDW;
+        document.getElementById('out_npdw').classList.add('highlight-error');
+        document.getElementById('out_npdw').classList.remove('highlight-inactive');
+        valueCheckPassedPDW = false; return;
+    } else {
+        document.getElementById('out_npdw').classList.remove('highlight-error');
+        document.getElementById('out_npdw').classList.add('highlight-inactive');
+    }
+    if((p_pdwPRI - p_pdwPwidth) < c_Tmin){
+        document.getElementById('pdw_pri').classList.add('highlight-error');
+        document.getElementById('pdw_pwidth').classList.add('highlight-error');
+        document.getElementById('ctr_tmin').classList.add('highlight-warning');
+        valueCheckPassedPDW = false; return;
+    } else {
+        document.getElementById('pdw_pri').classList.remove('highlight-error');
+        document.getElementById('pdw_pwidth').classList.remove('highlight-error');
+        document.getElementById('ctr_tmin').classList.remove('highlight-warning');
+    }
+    if(p_antFhopPeriod < 0.001){
+        document.getElementById('fhop_period').classList.add('highlight-error');
+        valueCheckPassedPDW = false; return;
+    } else {
+        document.getElementById('fhop_period').classList.remove('highlight-error');
+    }
+    if(p_pdwPwidth < c_tpmin){
+        document.getElementById('pdw_pwidth').classList.add('highlight-error');
+        document.getElementById('ctr_tpmin').classList.add('highlight-warning');
+        valueCheckPassedPDW = false; return;
+    } else {
+        document.getElementById('pdw_pwidth').classList.remove('highlight-error');
+        document.getElementById('ctr_tpmin').classList.remove('highlight-warning');
+    }
+  }
+
+  function validateValuesIQ(){
+    valueCheckPassedIQ = true;
+    if(p_iqid > 8000 || p_iqid < 0){
+        document.getElementById('inp_iqid').classList.add('highlight-error');
+        valueCheckPassedIQ = false; return;
+    } else {
+        document.getElementById('inp_iqid').classList.remove('highlight-error');
+    }
+    if(p_iqlength > 1e-3 || p_iqlength < 8e-9){
+        document.getElementById('inp_iqlength').classList.add('highlight-error');
+        valueCheckPassedIQ = false; return;
+    } else {
+        document.getElementById('inp_iqlength').classList.remove('highlight-error');
+    }
+    if(Math.abs(p_iqchirpstart) > (c_iqbw/2)){
+        document.getElementById('inp_iqchirpstart').classList.add('highlight-error');
+        document.getElementById('ctr_iqbw').classList.add('highlight-warning');
+        valueCheckPassedIQ = false; return;
+    } else {
+        document.getElementById('inp_iqchirpstart').classList.remove('highlight-error');
+        document.getElementById('ctr_iqbw').classList.remove('highlight-warning');
+    }
+    if(Math.abs(p_iqchirpend) > (c_iqbw/2)){
+        document.getElementById('inp_iqchirpend').classList.add('highlight-error');
+        document.getElementById('ctr_iqbw').classList.add('highlight-warning');
+        valueCheckPassedIQ = false; return;
+    } else {
+        document.getElementById('inp_iqchirpend').classList.remove('highlight-error');
+        document.getElementById('ctr_iqbw').classList.remove('highlight-warning');
+    }
+    if(p_iqtrise < 0 || p_iqtrise > p_iqlength){
+        document.getElementById('inp_iqtrise').classList.add('highlight-error');
+        document.getElementById('inp_iqlength').classList.add('highlight-warning');
+        valueCheckPassedIQ = false; return;
+    } else {
+        document.getElementById('inp_iqtrise').classList.remove('highlight-error');
+        document.getElementById('inp_iqlength').classList.remove('highlight-warning');
+    }
+    if(p_iqtfall < 0 || p_iqtfall > p_iqlength){
+        document.getElementById('inp_iqtfall').classList.add('highlight-error');
+        document.getElementById('inp_iqlength').classList.add('highlight-warning');
+        valueCheckPassedIQ = false; return;
+    } else {
+        document.getElementById('inp_iqtfall').classList.remove('highlight-error');
+        document.getElementById('inp_iqlength').classList.remove('highlight-warning');
+    }
+    if(p_iqscale < 0.01 || p_iqscale > 1.0){
+        document.getElementById('inp_iqscale').classList.add('highlight-error');
+        valueCheckPassedIQ = false; return;
+    } else {
+        document.getElementById('inp_iqscale').classList.remove('highlight-error');
+    }
+    if(p_iqtypeidx !== 0){
+        document.getElementById('inp_iqchirpstart').classList.add('highlight-inactive');
+        document.getElementById('inp_iqchirpend').classList.add('highlight-inactive');
+    } else {
+        document.getElementById('inp_iqchirpstart').classList.remove('highlight-inactive');
+        document.getElementById('inp_iqchirpend').classList.remove('highlight-inactive');
+    }
+    if(p_iqtypeidx === 3){estimatedBW = 10e6;} // theoretically 0, but needs some BW for plotting
+    if(p_iqtypeidx === 2){estimatedBW = 100e6;}
+    if(p_iqtypeidx === 1){estimatedBW = 100e6;}
+    if(p_iqtypeidx === 0){estimatedBW = (p_iqchirpend - p_iqchirpstart)}
+    document.getElementById('inp_iqbw').value = estimatedBW / 1e6;
+  }
+
+  function updateIQWaveformData(){
+    if(valueCheckPassedIQ !== true) return;
+    var iq_ts = 1/p_iqrate;
+    // p_iqscale = 0.99 * p_iqscale;  // just add a little bit of backoff to be sure there are no IQ overflows
+
+    var n_samples = Math.floor(p_iqlength / iq_ts) +1;
+    if(n_samples > MAX_IQ_SIZE){
+        n_samples = MAX_IQ_SIZE;
+        // todo make another field for the user to see
+        console.log("Warning: Exceeding max number of samples!");
+    }
+    
+    for(let i = 0; i < n_samples; i++) {
+        iq_data_time[i] = i * iq_ts;
+    }
+    for(let i = 0; i < n_samples; i++) {
+        iq_data_i[i] = 0.0;
+        iq_data_q[i] = 0.0;
+    }
+
+    if(p_iqtypeidx === 1){ // Barker-7
+        var stepsize = Math.ceil(n_samples / 7);
+        for(let i = 0; i < 7; i++) {
+            for(let j=0; j<stepsize; j++){
+                if(i === 3 || i === 4 || i === 6){
+                    iq_data_i[stepsize*i + j] = -1.0;
+                } else {
+                    iq_data_i[stepsize*i + j] = +1.0;
+                }
+            }
+        }
+    } else if(p_iqtypeidx === 2){ // Barker-13
+        var stepsize = Math.ceil(n_samples / 13);
+        for(let i = 0; i < 13; i++) {
+            for(let j=0; j<stepsize; j++){
+                if(i === 5 || i === 6 || i === 9 || i === 11 ){
+                    iq_data_i[stepsize*i + j] = -1.0;
+                } else {
+                    iq_data_i[stepsize*i + j] = +1.0;
+                }
+            }
+        }
+    } else if(p_iqtypeidx === 0){ // linear Chirp
+        // https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.chirp.html
+        var beta = (p_iqchirpend - p_iqchirpstart) / p_iqlength;
+        for(let i = 0; i < n_samples; i++) {
+            var phase = 2 * Math.PI * (p_iqchirpstart * iq_data_time[i] + 0.5 * beta * iq_data_time[i] * iq_data_time[i]);
+            iq_data_i[i] = Math.cos(phase);
+            iq_data_q[i] = Math.cos(phase - Math.PI/2);
+        }
+    } else {
+        // CW pulse
+        for(let i = 0; i < n_samples; i++) {
+            iq_data_i[i] = 1.0;
+            iq_data_q[i] = 0;
+        }
+    }
+    
+    // apply rise / fall time
+    var n_rise = Math.ceil(p_iqtrise / iq_ts);
+    var n_fall = Math.ceil(p_iqtfall / iq_ts);
+
+    for(let i = 0; i < n_rise; i++) {
+        iq_data_i[i] = iq_data_i[i] * easeInOutSine(i/n_rise);
+        iq_data_q[i] = iq_data_q[i] * easeInOutSine(i/n_rise);
+    }
+    for(let i = 0; i < n_fall; i++) {
+        var j = n_samples-1 -i;
+        iq_data_i[j] = iq_data_i[j] * easeInOutSine(i/n_fall);
+        iq_data_q[j] = iq_data_q[j] * easeInOutSine(i/n_fall);
+    }
+
+    // apply IQ scale
+    for(let i = 0; i < n_samples; i++) {
+        iq_data_i[i] = iq_data_i[i] * p_iqscale;
+        iq_data_q[i] = iq_data_q[i] * p_iqscale;
+    }
+    // limit displayed samples for performance reason
+    // todo add flag for user to see that it is clipping
+    var subsetIndex = n_samples;
+    if(subsetIndex > 5000){
+        subsetIndex = 5000;
+    }
+    pltdat_t = iq_data_time.slice(0, subsetIndex);
+    pltdat_i = iq_data_i.slice(0, subsetIndex);
+    pltdat_q = iq_data_q.slice(0, subsetIndex);
+
+    var plt_trace_i = {
+        x: pltdat_t,
+        y: pltdat_i,
+        mode: 'lines',
+        name: 'I',
+        type: 'scatter',
+        line: {color: '#388eea'}
+    };
+    var plt_trace_q = {
+        x: pltdat_t,
+        y: pltdat_q,
+        mode: 'lines',
+        name: 'Q',
+        type: 'scatter',
+        line: {color: '#eaa938'}
+    };
+    var plt_data = [plt_trace_i, plt_trace_q];
+    var plt_layout = {
+        title: {
+            text: "IQ Waveform"
+        },
+        margin: { t: 0 }, 
+        showSendToCloud:false,
+        xaxis: {
+            title: {
+                text: "time (s)"
+            }
+        },
+        yaxis: {
+            title: {
+                text: "value"
+            },
+            // Try zooming in or out using the modebar buttons. These only apply to the xaxis in this example.
+            modebardisable: "zoominout"
+        }
+    };
+    inpNIQ.value = n_samples;
+    Plotly.newPlot( plotlyCanvas_iq, plt_data,plt_layout);
+  }
+
+  function updatePlotAntenna(){
+    if(p_antPmax > c_Pmax){
+        document.getElementById('ant_pmax').classList.add('highlight-error');
+    } else {
+        document.getElementById('ant_pmax').classList.remove('highlight-error');
+    }
+    var N = 360;
+    var x = [];
+    var y = [];
+    if(p_antShape === 0){
+      y = getPolarAntennaCardioid(N);
+    } else if (p_antShape === 1){
+      y = getPolarAntennaDipole(N);
+    } else {
+      y = getPolarAntennaIsotrope(N);
+    }
+    for(let i=0; i<N; i++){
+      x[i] = i;
+    }
+    var plt_data = [{
+      r: y,
+      theta: x,
+      mode: 'lines',
+      name: 'directivity',
+      line: {color: '#388eea'},
+      type: 'scatterpolar'
+    }];
+    var layout = {
+      title: {
+        text: 'Antenna directivity'
+      },
+      font: {
+        family: 'Arial, sans-serif;',
+        size: 12,
+        color: '#000'
+      },
+      showlegend: true,
+      orientation: -90
+    };
+    Plotly.newPlot(plotlyCanvas_antenna, plt_data, layout);
+  }
+
+  function updatePlotPDW(){
+    if(valueCheckPassedPDW === false) return;
+    var resolution_time_per_pixel = 0.001; // ms/px
+    var plotsize_x = Math.ceil( p_pdwTsim / resolution_time_per_pixel ) + 3;
+    var resolution_hz_per_pixel = 1e6; // todo set to 10MHz but increases pixel resolution on plot
+    var linebw = c_iqbw;
+    var plotsize_y = Math.ceil( (c_Fmax + (c_iqbw/2)) / resolution_hz_per_pixel ) + 3;
+    let heatmap_z = Array.from({ length: plotsize_y }, () => Array(plotsize_x).fill(-100)); // .fill(pmin -20));
+    
+    var reltime = 0;
+    for(let i = 0; i < N_PDW; i++) {
+      reltime += pdw_list[i].tstart;
+      var pwidth = pdw_list[i].pwidth;
+      var cfreq = pdw_list[i].freq;
+      var magn = pdw_list[i].pow;
+      var bw = 1e6 * (parseFloat( document.getElementById('inp_iqbw').value ) || 400);
+      if(p_iqenabled === 1){
+        bw = 20e6;
+      }
+      var t_start = Math.floor( reltime / resolution_time_per_pixel );
+      var t_stop = t_start + Math.ceil( pwidth / resolution_time_per_pixel );
+      var bw_start = Math.floor( (cfreq - (bw/2)) / resolution_hz_per_pixel);
+      var bw_stop = Math.ceil( (cfreq + (bw/2)) / resolution_hz_per_pixel);
+
+      if(bw_stop >= plotsize_y) bw_stop = plotsize_y-1;
+      if(t_stop >= plotsize_x) t_stop = plotsize_x-1;
+      if(bw_start < 0){
+        bw_start = 0;
+        if(bw_stop < bw/2/resolution_hz_per_pixel){
+            bw_stop = bw/2 / resolution_hz_per_pixel;
+        }
+      }
+      for(let x = bw_start; x < bw_stop; x++){
+        for(let y = t_start; y < t_stop; y++){
+          heatmap_z[x][y] = magn;
+        }
+      }
+    }
+
+    var plt_data = [
+      {
+        z: heatmap_z,
+        type: 'heatmap',
+        colorscale: 'Electric', // 'Cividis',
+        reversescale:false
+      }
+    ];
+    var ytickvals = [];
+    var yticktext = [];
+    for(let i=0; i<plotsize_y; i++){
+      var freq = i*resolution_hz_per_pixel;
+      if( freq % 1000 < 10 ){
+        ytickvals.push(i);
+        yticktext.push(i*resolution_hz_per_pixel);
+      }
+    }
+    var xtickvals = [];
+    var xticktext = [];
+    for(let i=0; i<plotsize_y; i++){
+      var tim = i*resolution_time_per_pixel * 1000; // ms
+      if( tim % 500 === 0 ){
+        xtickvals.push(i);
+        xticktext.push(i*resolution_time_per_pixel);
+      }
+    }
+    // todo if ytickvals.lengh >  7 --> drop every other value
+    // todo if ytickvals.lengh < 1 --> change x calculation
+
+    var plt_layout = {
+        title: {
+            text: "PDW Waterfall"
+        },
+        margin: { t: 0 }, 
+        showSendToCloud:false,
+        xaxis: {
+            //tickmode: "array",
+            //tickvals: xtickvals,
+            //ticktext: xticktext,
+            title: {
+                text: "Simulation Time (ms)"
+            }
+        },
+        yaxis: {
+            //tickmode: "array",
+            //tickvals: ytickvals,
+            //ticktext: yticktext,
+            title: {
+                text: "Spectrum (MHz)"
+            },
+            // Try zooming in or out using the modebar buttons. These only apply to the xaxis in this example.
+            modebardisable: "zoominout"
+        }
+    };
+    Plotly.newPlot( plotlyCanvas_waterfall, plt_data, plt_layout);
+  }
+
+  function updatePlotPhase(){
+    if(valueCheckPassedPDW === false) return;
+    var resolution_time_per_pixel = 0.001; // ms/px
+    var plotsize_x = Math.ceil( p_pdwTsim / resolution_time_per_pixel ) + 3;
+    var resolution_deg_per_pixel = 1;
+    var plotsize_y = Math.ceil( (360) / resolution_deg_per_pixel );
+    let heatmap_z = Array.from({ length: plotsize_y }, () => Array(plotsize_x).fill(-100)); // .fill(pmin -20));
+    
+    var reltime = 0;
+    for(let i = 0; i < N_PDW; i++) {
+      reltime += pdw_list_2[i].tstart;
+      var pwidth = pdw_list_2[i].pwidth;
+      var cfreq = pdw_list_2[i].freq;
+      var magn = pdw_list_2[i].pow;
+      var phas = (pdw_list_2[i].phas) / Math.PI * 180;
+      var bw = 5;
+      var t_start = Math.floor( reltime / resolution_time_per_pixel );
+      var t_stop = t_start + Math.ceil( pwidth / resolution_time_per_pixel );
+      var bw_start = Math.floor( (phas - (bw/2)) / resolution_deg_per_pixel);
+      var bw_stop = Math.ceil( (phas + (bw/2)) / resolution_deg_per_pixel);
+
+      if(bw_start > plotsize_y+bw/2){
+        bw_start -= 360;
+        bw_stop = bw_stop-360;
+      }
+      if(bw_start < 0){
+        if(bw_start < -bw){
+            bw_stop = bw_start + 360;
+            bw_start = bw_stop - bw;
+        } else {
+            bw_start = 0;
+            bw_stop = bw/2;
+        }
+      } 
+      if(bw_stop < 0) bw_stop = 0;
+      if(t_stop >= plotsize_x) t_stop = plotsize_x-1;
+      if(bw_stop > 360){
+        bw_stop = 360;
+      } 
+      for(let x = bw_start; x < bw_stop; x++){
+        for(let y = t_start; y < t_stop; y++){
+          heatmap_z[x][y] = 0;
+        }
+      }
+    }
+
+    var plt_data = [
+      {
+        z: heatmap_z,
+        type: 'heatmap',
+        colorscale: 'Electric', // 'Cividis',
+        reversescale:false
+      }
+    ];
+    var ytickvals = [];
+    var yticktext = [];
+    for(let i=0; i<plotsize_y; i++){
+      var freq = i*resolution_deg_per_pixel;
+      if( freq % 1000 < 10 ){
+        ytickvals.push(i);
+        yticktext.push(i*resolution_deg_per_pixel);
+      }
+    }
+    var xtickvals = [];
+    var xticktext = [];
+    for(let i=0; i<plotsize_y; i++){
+      var tim = i*resolution_time_per_pixel * 1000; // ms
+      if( tim % 45 === 0 ){
+        xtickvals.push(i);
+        xticktext.push(i*resolution_time_per_pixel);
+      }
+    }
+    // todo if ytickvals.lengh >  7 --> drop every other value
+    // todo if ytickvals.lengh < 1 --> change x calculation
+
+    var plt_layout = {
+        title: {
+            text: "CH2 Phase"
+        },
+        margin: { t: 0 }, 
+        showSendToCloud:false,
+        xaxis: {
+            //tickmode: "array",
+            //tickvals: xtickvals,
+            //ticktext: xticktext,
+            title: {
+                text: "Simulation Time (ms)"
+            }
+        },
+        yaxis: {
+            //tickmode: "array",
+            //tickvals: ytickvals,
+            //ticktext: yticktext,
+            title: {
+                text: "Phase (°)"
+            },
+            // Try zooming in or out using the modebar buttons. These only apply to the xaxis in this example.
+            modebardisable: "zoominout"
+        }
+    };
+    Plotly.newPlot( plotlyCanvas_phase, plt_data, plt_layout);
+  }
+
+  // todo make this a library function
+  function exportFileIQ(){
+    const link = document.createElement("a");
+    var iq_ts = 1/p_iqrate;
+    var n_samples = Math.floor(p_iqlength / iq_ts) +1;
+
+    var raw_data = [iq_data_i, iq_data_q];
+    let txtContent = "";
+    for(let i = 0; i < n_samples; i++) {
+        txtContent += iq_data_i[i].toString() + ";";
+        txtContent += iq_data_q[i].toString() + "\r\n";
+    }
+    const file = new Blob([txtContent], { type: 'text/csv' });
+    link.href = URL.createObjectURL(file);
+    link.download = "iqdata.csv";
+    link.click();
+    URL.revokeObjectURL(link.href);
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+      btnCalcIQ.addEventListener('click', () => {
+        updateFormValues();
+        validateValuesIQ();
+        updateIQWaveformData();
+      });
+      inpIqType.addEventListener('click', () => {
+        updateFormValues();
+        validateValuesIQ();
+        updateIQWaveformData();
+      });
+      btnExportIQ.addEventListener('click', () => {
+        updateFormValues();
+        validateValuesIQ();
+        updateIQWaveformData();
+        exportFileIQ();
+      });
+      btnCalcPDW.addEventListener('click', () => {
+        updateFormValues();
+        validateValuesPDW();
+        updatePdwList();
+        updatePlotPDW();
+      });
+      btnGeneratePDWch.addEventListener('click', () => {
+        updateFormValues();
+        validateValuesPDW();
+        updatePdwList();
+        updatePlotPDW();
+        updatePdwMultichannel();
+        updateMultiAntenna();
+        updatePlotPhase();
+      });
+      btnExportPDW.addEventListener('click', () => {
+        exportPDWList(pdw_list);
+      });
+      btnExportPDW2.addEventListener('click', () => {
+        exportPDWList(pdw_list_2);
+      });
+      btnExportPDW3.addEventListener('click', () => {
+        exportPDWList(pdw_list_3);
+      });
+      btnExportPDW4.addEventListener('click', () => {
+        exportPDWList(pdw_list_4);
+      });
+      instrPreset.addEventListener('click', () => {
+        updateFormValues();
+        updateContraintPreset();
+        updateFormValues();
+        validateValuesIQ();
+        validateValuesPDW();
+      });
+      antShape.addEventListener('click', () => {
+        updateFormValues();
+        updatePlotAntenna();
+      });
+      antNant.addEventListener('click', () => {
+        updateFormValues();
+        updateMultiAntenna();
+      });
+      antFspacing.addEventListener('input', () => {
+        updateFormValues();
+        updateAntennaSpacing();
+      });
+      antSpacing.addEventListener('input', () => {
+        updateFormValues();
+        updateAntennaSpacing();
+      });
+      antFhopFpattern.addEventListener('click', () => {
+        updateFormValues();
+        validateValuesPDW();
+      });
+      antAoaPattern.addEventListener('click', () => {
+        updateFormValues();
+        validateValuesPDW();
+      });
+  });
+
+  function update_all_buttons(){
+    updateFormValues();
+    validateValuesIQ();
+    validateValuesPDW();
+    updateIQWaveformData();
+    updatePlotAntenna();
+    updateAntennaSpacing();
+    updatePdwList();
+    updatePlotPDW();
+  }
+  
+</script>
+</html>

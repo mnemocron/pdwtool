@@ -1,0 +1,95 @@
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f9f9f9;
+  color: #333;
+}
+
+label {
+  font-size: 11pt;
+}
+.si-unit {
+  font-style: italic;
+  font-weight: bold;
+  font-size: 11pt;
+}
+
+/* Header */
+header, footer {
+  display: flex;
+  align-items: center;
+  padding: 10px 20px;
+  background-color: #29313f;
+  color: #fff;
+}
+header img {
+  height: 40px;
+  margin-right: 10px;
+}
+header h1 {
+  font-size: 1.5rem;
+  margin: 0;
+}
+
+input {
+    color: #195cc6;
+}
+.reference-section {
+  font-size: 9pt;
+  color: #aaa;
+}
+.reference-section a {
+  color: #74a3c9;
+}
+
+.container-wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-around;
+  margin: 20px;
+  gap: 20px;
+}
+.tool-container {
+  flex: 1 1 200px; /* minimum width 300px */
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  padding: 20px;
+}
+.tool-container h2 {
+  margin-top: 0;
+  font-size: 1.2rem;
+  color: #2c3e50;
+}
+
+.tool-container label {
+  display: block;
+  margin-top: 10px;
+}
+.tool-container button {
+  width: 96%;
+  padding: 8px;
+  margin-top: 5px;
+}
+.tool-container input,
+.tool-container select {
+  /* width: 96%; */
+  padding: 8px;
+  margin-top: 5px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+.tool-container input:focus,
+.tool-container select:focus {
+  outline: none;
+  border-color: #2980b9;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .container-wrapper {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
